@@ -534,7 +534,7 @@ public class Bluetooth {
         }
     }
 
-    public void connectDevice(String deviceName) {
+    public boolean connectDevice(String deviceName) {
         // Get the device MAC address
         String address = null;
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
@@ -547,7 +547,9 @@ public class Bluetooth {
             this.connect(device); // Attempt to connect to the device
         } catch (Exception e){
             Log.e(TAG, "Unable to connect to device address "+ address + " " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
 }

@@ -58,10 +58,17 @@ public class MainActivity extends AppCompatActivity {
             BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
             if (bluetoothAdapter.isEnabled()) {
                 bt.start();
-                bt.connectDevice("HC-06");
                 Log.d(TAG, "BT started - listening");
-                statusTextBox.setText("Connected");
-                bt.sendMessage(CMD_START_SENDING_DATA);
+                if(bt.connectDevice("HC-06"))
+                {
+                    statusTextBox.setText("Connected");
+                    bt.sendMessage(CMD_START_SENDING_DATA);
+                }
+                else
+                {
+                    statusTextBox.setText("Cannot connect to device.");
+                }
+
             } else {
                 Log.w(TAG, "BT started - bluetooth is not enabled");
                 statusTextBox.setText("Bluetooth Not enabled");
