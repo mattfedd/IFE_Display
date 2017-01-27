@@ -518,11 +518,11 @@ public class Bluetooth {
         }
     }
 
-    public void sendMessage(String message) {
+    public boolean sendMessage(String message) {
         // Check that we're actually connected before trying anything
         if (this.getState() != Bluetooth.STATE_CONNECTED) {
             Log.w(TAG, "bluetooth is not connected");
-            return;
+            return false;
         }
 
         // Check that there's actually something to send
@@ -532,6 +532,8 @@ public class Bluetooth {
             byte[] send = (message + EOT).getBytes();
             this.write(send);
         }
+
+        return true;
     }
 
     public boolean connectDevice(String deviceName) {
