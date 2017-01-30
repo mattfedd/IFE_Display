@@ -8,10 +8,14 @@ import android.bluetooth.BluetoothAdapter;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
 import android.view.Window;
 import android.widget.TextView;
 
 import org.w3c.dom.Text;
+
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -20,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
     //commands to send to the HC-06 device -- these can be anything
     private static final String CMD_START_SENDING_DATA = "A";
     private static final String CMD_STOP_SENDING_DATA = "B";
-    private static final String CMD_SEND_SPEED_DATA = "speed#";
+    private static final String CMD_SEND_GENERAL_DATA = "general#";
     private static final String CMD_SEND_SOC_DATA = "soc#";
 
     //states for what data to expect
@@ -78,7 +82,12 @@ public class MainActivity extends AppCompatActivity {
         mphTextBox.setTypeface(speedFont, Typeface.ITALIC);
         socTextBox.setTypeface(speedFont, Typeface.ITALIC);
 
+//        speedTextBox.setGravity(Gravity.RIGHT);
+//        speedTextBox.setTextAlignment(View.TEXT_ALIGNMENT_GRAVITY);
+
         bt = new Bluetooth(this, h);
+
+        timed_h.postDelayed(r, 1000);
 
         //after onCreate() is called, onStart() and then onResume() are automatically called.
         //onResume() is overridden below
@@ -102,7 +111,6 @@ public class MainActivity extends AppCompatActivity {
     {
         super.onResume();
         connectService();
-        timed_h.postDelayed(r, 1000);
     }
 
     private final Handler timed_h = new Handler();
@@ -110,39 +118,32 @@ public class MainActivity extends AppCompatActivity {
     {
         public void run()
         {
-            //do stuff
-            //either send command to keep sending data, or request something specific, I guess
-            counter++;
-            Log.d(TAG, Integer.toString(counter));
-            if(counter % 2 == 0)
-            {
-                bt.sendMessage(CMD_SEND_SPEED_DATA);//dataOutTextBox.setText(CMD_SEND_SPEED_DATA + Integer.toString(counter));
-            }
-            else
-            {
-                bt.sendMessage(CMD_SEND_SOC_DATA);//dataOutTextBox.setText(CMD_SEND_SOC_DATA + Integer.toString(counter));
-            }
+            bt.sendMessage(CMD_SEND_GENERAL_DATA);
             timed_h.postDelayed(r, 1000);
         }
     };
 
     public void connectService(){
-
         try {
             statusTextBox.setText("Connecting...");
             BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
             if (bluetoothAdapter.isEnabled()) {
                 bt.start();
                 Log.d(TAG, "BT started - listening");
-                if(bt.connectDevice("HC-06") && bt.sendMessage(CMD_SEND_SPEED_DATA)) //send test message
-                {
-                    statusTextBox.setText("Connected");
-                }
-                else
-                {
-                    statusTextBox.setText("Cannot connect to device.");
-                }
 
+                for (int attempts=0; attempts<5; attempts++) {
+                    bt.connectDevice("HC-06");
+
+                    Thread.sleep(1000);
+
+                    if (bt.getState() == Bluetooth.STATE_CONNECTED || bt.getState() == Bluetooth.STATE_CONNECTING) {
+                        statusTextBox.setText("Connected");
+                        return;
+                    } else {
+                        statusTextBox.setText("Attempt " + attempts + ", trying to connect");
+                    }
+                }
+                statusTextBox.setText("Failed all attempts to connect.");
             } else {
                 Log.w(TAG, "BT started - bluetooth is not enabled");
                 statusTextBox.setText("Bluetooth Not enabled");
@@ -151,47 +152,27 @@ public class MainActivity extends AppCompatActivity {
             Log.e(TAG, "Unable to start bt ",e);
             statusTextBox.setText("Unable to connect " + e);
         }
-
-
     }
 
     private final Handler h = new Handler() {
         @Override
         public void handleMessage(Message msg) {
+            String data;
             switch (msg.what) {
                 case Bluetooth.MESSAGE_STATE_CHANGE:
                     Log.d(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                     break;
                 case Bluetooth.MESSAGE_WRITE:
-                    Log.d(TAG, "MESSAGE_WRITE " + msg.obj);
-                    if(msg.obj.toString().contains(CMD_SEND_SPEED_DATA))
-                    {
-                        //we just sent the speed command
-                        dataOutTextBox.setText(CMD_SEND_SPEED_DATA);
-                    }
-                    if(msg.obj.toString().contains(CMD_SEND_SOC_DATA))
-                    {
-                        //we just sent the soc command
-                        dataOutTextBox.setText(CMD_SEND_SOC_DATA);
-                    }
+                    data = new String((byte[])msg.obj);
+                    Log.d(TAG, "MESSAGE_WRITE " + data);
+                    dataOutTextBox.setText(data);
                     break;
                 case Bluetooth.MESSAGE_READ:
-                    Log.d(TAG, "MESSAGE_READ ");
-
-                    //Filter message here based on the way it's sent from the HC-06
-                    //Check for speed or soc data and update internal displays accordingly
-                    String msg_body = msg.obj.toString().substring(0, msg.arg1);
-                    if(dataOutTextBox.getText().toString().contains(CMD_SEND_SPEED_DATA))
-                    {
-                        //this is not how you filter messages irl
-                        dataInTextBox.setText("speed : " + msg_body);
-                        Log.d(TAG, "speed : " + msg_body);
-                    }
-                    else if(dataOutTextBox.getText().toString().contains(CMD_SEND_SOC_DATA))
-                    {
-                        dataInTextBox.setText( "soc : " + msg_body);
-                        Log.d(TAG, "soc : " + msg_body);
-                    }
+                    data = new String((byte[])msg.obj);
+                    data = data.substring(0, data.indexOf(0)+1);
+                    Log.d(TAG, "MESSAGE_READ " + Arrays.toString((byte[])msg.obj));
+                    Log.d(TAG, "MESSAGE_READ " + data);
+                    //dataInTextBox.setText(new String(byte[]));
                     break;
                 case Bluetooth.MESSAGE_DEVICE_NAME:
                     Log.d(TAG, "MESSAGE_DEVICE_NAME "+msg);
