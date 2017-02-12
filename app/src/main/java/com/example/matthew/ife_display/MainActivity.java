@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         what other data is there
      */
 
-
+    private MessageParser parser;
 
     private Bluetooth bt;
 
@@ -82,12 +82,12 @@ public class MainActivity extends AppCompatActivity {
         mphTextBox.setTypeface(speedFont, Typeface.ITALIC);
         socTextBox.setTypeface(speedFont, Typeface.ITALIC);
 
+        parser = new MessageParser();
+
 //        speedTextBox.setGravity(Gravity.RIGHT);
 //        speedTextBox.setTextAlignment(View.TEXT_ALIGNMENT_GRAVITY);
 
         bt = new Bluetooth(this, h);
-
-        timed_h.postDelayed(r, 1000);
 
         //after onCreate() is called, onStart() and then onResume() are automatically called.
         //onResume() is overridden below
@@ -118,8 +118,11 @@ public class MainActivity extends AppCompatActivity {
     {
         public void run()
         {
+            Log.d(TAG, "Running the runnable");
             bt.sendMessage(CMD_SEND_GENERAL_DATA);
-            timed_h.postDelayed(r, 1000);
+            socTextBox.setText(Integer.toString(parser.soc) + "%");
+            speedTextBox.setText(Integer.toString(parser.speed) + " ");
+            timed_h.postDelayed(r, 200);
         }
     };
 
@@ -138,6 +141,8 @@ public class MainActivity extends AppCompatActivity {
 
                     if (bt.getState() == Bluetooth.STATE_CONNECTED || bt.getState() == Bluetooth.STATE_CONNECTING) {
                         statusTextBox.setText("Connected");
+                        Log.d(TAG, "Posting delay");
+                        timed_h.postDelayed(r, 5000);
                         return;
                     } else {
                         statusTextBox.setText("Attempt " + attempts + ", trying to connect");
@@ -169,9 +174,10 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case Bluetooth.MESSAGE_READ:
                     data = new String((byte[])msg.obj);
-                    data = data.substring(0, data.indexOf(0)+1);
-                    Log.d(TAG, "MESSAGE_READ " + Arrays.toString((byte[])msg.obj));
-                    Log.d(TAG, "MESSAGE_READ " + data);
+                    data = data.substring(0, (Integer)msg.arg1);
+                    Log.d(TAG, "MESSAGE_READ A " + Arrays.toString((byte[])msg.obj));
+                    Log.d(TAG, "MESSAGE_READ B " + msg.arg1 + " " + data);
+                    parser.addMessage(data);
                     //dataInTextBox.setText(new String(byte[]));
                     break;
                 case Bluetooth.MESSAGE_DEVICE_NAME:
