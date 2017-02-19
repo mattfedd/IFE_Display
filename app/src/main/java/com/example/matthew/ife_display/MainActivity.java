@@ -22,26 +22,7 @@ public class MainActivity extends AppCompatActivity {
     public final String TAG = "Main";
 
     //commands to send to the HC-06 device -- these can be anything
-    private static final String CMD_START_SENDING_DATA = "A";
-    private static final String CMD_STOP_SENDING_DATA = "B";
     private static final String CMD_SEND_GENERAL_DATA = "general#";
-    private static final String CMD_SEND_SOC_DATA = "soc#";
-
-    //states for what data to expect
-    private static final int NONE = 0;
-    private static final int SPEED = 1;
-    private static final int SOC = 2;
-    private static final int FAULT = 3;
-
-    private int expecting = NONE;
-
-    private String speedText = "Speed: ";
-    private String SocText = "SoC: ";
-
-    private float speed = 0.0f;
-    private float soc = 0.0f;
-
-    private static int counter = 0;
 
     private TextView statusTextBox;
     private TextView speedTextBox;
@@ -122,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
             bt.sendMessage(CMD_SEND_GENERAL_DATA);
             socTextBox.setText(Integer.toString(parser.soc) + "%");
             speedTextBox.setText(Integer.toString(parser.speed) + " ");
-            timed_h.postDelayed(r, 200);
+            timed_h.postDelayed(r, 75);
         }
     };
 
@@ -169,16 +150,15 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case Bluetooth.MESSAGE_WRITE:
                     data = new String((byte[])msg.obj);
-                    Log.d(TAG, "MESSAGE_WRITE " + data);
+                    Log.d(TAG, "MESSAGE_WRITE:" + data);
                     dataOutTextBox.setText(data);
                     break;
                 case Bluetooth.MESSAGE_READ:
                     data = new String((byte[])msg.obj);
-                    data = data.substring(0, (Integer)msg.arg1);
-                    Log.d(TAG, "MESSAGE_READ A " + Arrays.toString((byte[])msg.obj));
-                    Log.d(TAG, "MESSAGE_READ B " + msg.arg1 + " " + data);
+                    data = data.substring((Integer)msg.arg1, (Integer)msg.arg2+1);
+                    Log.d(TAG, "MESSAGE_READ A:" + Arrays.toString((byte[])msg.obj));
+                    Log.d(TAG, "MESSAGE_READ B:" + msg.arg1 + " " + data);
                     parser.addMessage(data);
-                    //dataInTextBox.setText(new String(byte[]));
                     break;
                 case Bluetooth.MESSAGE_DEVICE_NAME:
                     Log.d(TAG, "MESSAGE_DEVICE_NAME "+msg);
@@ -189,9 +169,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-
-
-
 
 
 }

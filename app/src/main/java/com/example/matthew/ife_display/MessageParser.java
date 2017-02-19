@@ -10,7 +10,6 @@ import java.util.ArrayList;
 
 public class MessageParser {
     private final static String TAG = "MessageParser";
-    public ArrayList<String> messages;
     public String msg;
 
     public int rpm = 0;
@@ -28,8 +27,9 @@ public class MessageParser {
         if(data.contains("!"))
         {
             //end of message, let's get to parsing
+            Log.d(TAG, "Adding:" + data);
             msg += data;
-            Log.d(TAG, msg);
+            Log.d(TAG, "Total msg:"+msg);
             parse(msg);
             msg = "";
         }
@@ -45,11 +45,14 @@ public class MessageParser {
     {
         //test data: general# Speed = 60; RPM = 2200; SOC = 78; fault = 0;!
 
+        if (data.indexOf(";") == -1) {
+            Log.d(TAG, "Big error in the message format -- " + data);
+        }
+
         String temp = data.substring(data.indexOf("#")+1, data.indexOf("!"));
         String info = "";
         int num = 0;
 
-//        Log.d(TAG, data);
         while(true) {
             if (temp.indexOf(";") == -1) {
                 break;
